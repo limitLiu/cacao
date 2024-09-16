@@ -224,6 +224,13 @@ impl App {
         });
     }
 
+    /// Sends an update() message to each onscreen window.
+    pub fn update_windows() {
+        shared_application(|app| unsafe {
+            let _: () = msg_send![app, updateWindows];
+        });
+    }
+
     /// Unregisters for remote notifications from APNS.
     pub fn unregister_for_remote_notifications() {
         shared_application(|app| unsafe {
