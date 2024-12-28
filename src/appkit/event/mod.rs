@@ -8,6 +8,8 @@ use objc::{class, msg_send, msg_send_id, sel};
 use crate::events::EventType;
 use crate::foundation::{id, nil, NSInteger, NSPoint, NSString};
 
+mod test;
+
 /// An EventMask describes the type of event.
 #[bitmask(u64)]
 pub enum EventMask {
@@ -81,6 +83,18 @@ impl Event {
         let characters = NSString::retain(unsafe { msg_send![&*self.0, characters] });
 
         characters.to_string()
+    }
+
+    /// An integer bit field that indicates the pressed modifier keys
+    pub fn modifier_flags(&self) -> EventModifierBitFlag {
+        let flags: NSUInteger = unsafe { msg_send![&*self.0, modifierFlags] };
+
+        flags.into()
+    }
+
+    /// A raw integer bit field that indicates the pressed modifier keys
+    pub fn modifier_flags_raw(&self) -> NSUInteger {
+        unsafe { msg_send![&*self.0, modifierFlags] }
     }
 
     /// The indices of the currently pressed mouse buttons.
@@ -208,4 +222,71 @@ impl From<&EventModifierFlag> for NSUInteger {
             EventModifierFlag::DeviceIndependentFlagsMask => 0xffff0000
         }
     }
+}
+
+// #[cfg(target_pointer_width = "32")] //@TODO contitional compilation fails, so always use 64
+// #[bitmask(u32)]
+// #[cfg(target_pointer_width = "64")]
+/// Flags that indicate which modifier keys are in the mix for an event.
+#[bitmask(u64)]
+#[bitmask_config(inverted_flags)]
+pub enum EventModifierBitFlag {
+    CapsLock     = 1 << 16,
+    LeftShift    =(1 << 17) + (1 <<  1),
+    RightShift   =(1 << 17) + (1 <<  2),
+    LeftControl  =(1 << 18) + (1 <<  0),
+    RightControl =(1 << 18) + (1 << 13),
+    LeftOption   =(1 << 19) + (1 <<  5),
+    RightOption  =(1 << 19) + (1 <<  6),
+    LeftCommand  =(1 << 20) + (1 <<  3),
+    RightCommand =(1 << 20) + (1 <<  4),
+    Shift        = Self::LeftShift  .bits | Self::RightShift  .bits,
+    Control      = Self::LeftControl.bits | Self::RightControl.bits,
+    Option       = Self::LeftOption .bits | Self::RightOption .bits,
+    Command      = Self::LeftCommand.bits | Self::RightCommand.bits,
+    LeftModi     = Self::LeftShift  .bits | Self::LeftControl .bits | Self::LeftOption .bits | Self::LeftCommand .bits,
+    RightModi    = Self::RightShift .bits | Self::RightControl.bits | Self::RightOption.bits | Self::RightCommand.bits,
+    LRModi       = Self::LeftModi   .bits | Self::RightModi   .bits,
+    Numpad       = 1 << 21,
+    Help         = 1 << 22,
+    Function     = 1 << 23,
+    DeviceIndependentFlagsMask = 0xffff0000,
+}
+
+use std::fmt;
+impl fmt::Display for EventModifierBitFlag {
+  fn fmt(&self, f:&mut fmt::Formatter) -> fmt::Result {
+    // key combos with flagmasks don't make sense? so just print the mask and return, ignoring other bits
+    if self.contains(EventModifierBitFlag::DeviceIndependentFlagsMask)    {write!(f,"!🖮")?;return fmt::Result::Ok(())};
+
+    if self.contains(EventModifierBitFlag::CapsLock         ) {write!(f,"⇪")?;}
+    if self.contains(EventModifierBitFlag::Shift            ) {write!(f,"‹⇧›")?;
+    } else                                                  {
+        if self.contains(EventModifierBitFlag::LeftShift    ) {write!(f,"‹⇧")?;}
+        if self.contains(EventModifierBitFlag::RightShift   ) {write!(f,"⇧›")?;}
+    }                                                       ;
+    if self.contains(EventModifierBitFlag::Control          ) {write!(f,"‹⌃›")?;
+    } else                                                  {
+        if self.contains(EventModifierBitFlag::LeftControl  ) {write!(f,"‹⌃")?;}
+        if self.contains(EventModifierBitFlag::RightControl ) {write!(f,"⌃›")?;}
+    }                                                       ;
+    if self.contains(EventModifierBitFlag::Option           ) {write!(f,"‹⌥›")?;
+    } else                                                  {
+        if self.contains(EventModifierBitFlag::LeftOption   ) {write!(f,"‹⌥")?;}
+        if self.contains(EventModifierBitFlag::RightOption  ) {write!(f,"⌥›")?;}
+    }                                                       ;
+    if self.contains(EventModifierBitFlag::Command          ) {write!(f,"‹⌘›")?;
+    } else                                                  {
+        if self.contains(EventModifierBitFlag::LeftCommand  ) {write!(f,"‹⌘")?;}
+        if self.contains(EventModifierBitFlag::RightCommand ) {write!(f,"⌘›")?;}
+    }                                                       ;
+    if self.contains(EventModifierBitFlag::Function         ) {
+        if f.alternate()                                      {write!(f,"🌐")?; // when it's a modifier key
+        } else                                                {write!(f,"ƒ")?;}}
+    if self.contains(EventModifierBitFlag::Numpad           ) {
+        if f.alternate()                                      {write!(f,"⇭")?; // when it's a modifier key
+        } else                                                {write!(f,"🔢")?;}}
+    if self.contains(EventModifierBitFlag::Help         ) {write!(f,"ℹ")?;}
+    fmt::Result::Ok(())
+  }
 }
