@@ -9,6 +9,9 @@ pub enum EventModifierFlag {
     /// CapsLock (or shift... oddly named...) is held.
     CapsLock,
 
+    /// Shift is held.
+    Shift,
+
     /// Control is held.
     Control,
 
@@ -18,6 +21,15 @@ pub enum EventModifierFlag {
     /// Command (CMD) is held.
     Command,
 
+    /// Nnumeric keypad or an arrow key has been pressed.
+    Numpad,
+
+    /// The Help key has been pressed
+    Help,
+
+    /// Function (🌐) is held or a function key has been pressed.
+    Function,
+
     /// Device independent flags mask.
     DeviceIndependentFlagsMask
 }
@@ -26,9 +38,13 @@ impl From<EventModifierFlag> for NSUInteger {
     fn from(flag: EventModifierFlag) -> NSUInteger {
         match flag {
             EventModifierFlag::CapsLock => 1 << 16,
+            EventModifierFlag::Shift => 1 << 17,
             EventModifierFlag::Control => 1 << 18,
             EventModifierFlag::Option => 1 << 19,
             EventModifierFlag::Command => 1 << 20,
+            EventModifierFlag::Numpad => 1 << 21,
+            EventModifierFlag::Help => 1 << 22,
+            EventModifierFlag::Function => 1 << 23,
             EventModifierFlag::DeviceIndependentFlagsMask => 0xffff0000
         }
     }
@@ -38,9 +54,13 @@ impl From<&EventModifierFlag> for NSUInteger {
     fn from(flag: &EventModifierFlag) -> NSUInteger {
         match flag {
             EventModifierFlag::CapsLock => 1 << 16,
+            EventModifierFlag::Shift => 1 << 17,
             EventModifierFlag::Control => 1 << 18,
             EventModifierFlag::Option => 1 << 19,
             EventModifierFlag::Command => 1 << 20,
+            EventModifierFlag::Numpad => 1 << 21,
+            EventModifierFlag::Help => 1 << 22,
+            EventModifierFlag::Function => 1 << 23,
             EventModifierFlag::DeviceIndependentFlagsMask => 0xffff0000
         }
     }
