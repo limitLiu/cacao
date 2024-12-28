@@ -44,7 +44,7 @@ use objc::runtime::Object;
 use objc::{class, msg_send, msg_send_id, sel};
 
 use crate::appkit::menu::Menu;
-use crate::foundation::{id, nil, AutoReleasePool, NSUInteger, NO, YES};
+use crate::foundation::{id, nil, AutoReleasePool, NSInteger, NSUInteger, NO, YES};
 use crate::invoker::TargetActionHandler;
 use crate::notification_center::Dispatcher;
 use crate::utils::activate_cocoa_multithreading;
@@ -63,7 +63,7 @@ pub use enums::*;
 mod traits;
 pub use traits::AppDelegate;
 
-use super::window::Window;
+use super::window::{Window, WindowDelegate};
 
 pub(crate) static APP_PTR: &str = "rstAppPtr";
 
@@ -317,6 +317,33 @@ impl App {
     pub fn terminate() {
         shared_application(|app| unsafe {
             let _: () = msg_send![app, terminate: nil];
+        });
+    }
+
+    /// Starts a modal event loop for the given window.
+    ///
+    /// This method runs a modal event loop for the specified window synchronously.
+    /// It displays the specified window, makes it key, starts the run loop, and
+    /// processes events for that window.
+    ///
+    /// Modern MacOS modal views should really be using the sheets API, but this
+    /// is still part of AppKit, so provided for completeness.  As with
+    /// begin_sheet, a WindowDelegate is required.
+    pub fn run_modal_for_window<W>(window: &Window<W>) -> ModalResponse
+    where
+        W: WindowDelegate + 'static
+    {
+        shared_application(|app| unsafe {
+            let modal_response: NSInteger = msg_send![app, runModalForWindow: &*window.objc];
+            modal_response.into()
+        })
+    }
+
+    /// Stop the current modal window, returning the given code.
+    pub fn stop_modal_with_code(modal_response: ModalResponse) {
+        shared_application(|app| unsafe {
+            let response: NSInteger = modal_response.into();
+            let _: () = msg_send![app, stopModalWithCode: response];
         });
     }
 }

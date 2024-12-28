@@ -10,7 +10,7 @@ use objc::rc::{Id, Shared};
 use objc::runtime::Object;
 use objc::{class, msg_send, msg_send_id, sel};
 
-use crate::filesystem::enums::ModalResponse;
+use crate::appkit::ModalResponse;
 use crate::foundation::{id, nil, NSInteger, NSString, NO, NSURL, YES};
 
 #[cfg(feature = "appkit")]

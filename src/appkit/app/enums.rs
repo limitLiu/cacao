@@ -1,6 +1,6 @@
 //! Various types used at the AppController level.
 
-use crate::foundation::NSUInteger;
+use crate::foundation::{NSInteger, NSUInteger};
 
 /// Used for determining how an application should handle quitting/terminating.
 /// You return this in your `AppController` `should_terminate` method.
@@ -153,6 +153,71 @@ impl From<&PresentationOption> for NSUInteger {
             PresentationOption::FullScreen => (1 << 10),
             PresentationOption::AutoHideToolbar => (1 << 11),
             PresentationOption::DisableCursorLocationAssistance => (1 << 12)
+        }
+    }
+}
+
+/// Represents a modal response for macOS modal dialogs.
+#[derive(Copy, Clone, Debug)]
+pub enum ModalResponse {
+    /// The user hit the "Ok" button.
+    Ok,
+
+    /// Continue.
+    Continue,
+
+    /// Canceled.
+    Canceled,
+
+    /// Stopped.
+    Stopped,
+
+    /// Aborted.
+    Aborted,
+
+    /// The first button in the dialog was clicked.
+    FirstButtonReturned,
+
+    /// The second button in the dialog was clicked.
+    SecondButtonReturned,
+
+    /// The third button in the dialog was clicked.
+    ThirdButtonReturned
+}
+
+impl From<NSInteger> for ModalResponse {
+    fn from(i: NSInteger) -> Self {
+        match i {
+            1 => ModalResponse::Ok,
+            0 => ModalResponse::Canceled,
+            1000 => ModalResponse::FirstButtonReturned,
+            1001 => ModalResponse::SecondButtonReturned,
+            1002 => ModalResponse::ThirdButtonReturned,
+            -1000 => ModalResponse::Stopped,
+            -1001 => ModalResponse::Aborted,
+            -1002 => ModalResponse::Continue,
+
+            // @TODO: Definitely don't panic here, wtf was I thinking?
+            // Probably make this a ModalResponse::Unknown or something so a user can
+            // gracefully handle.
+            e => {
+                panic!("Unknown NSModalResponse sent back! {}", e);
+            }
+        }
+    }
+}
+
+impl Into<NSInteger> for ModalResponse {
+    fn into(self) -> NSInteger {
+        match self {
+            ModalResponse::Ok => 1,
+            ModalResponse::Canceled => 0,
+            ModalResponse::FirstButtonReturned => 1000,
+            ModalResponse::SecondButtonReturned => 1001,
+            ModalResponse::ThirdButtonReturned => 1002,
+            ModalResponse::Stopped => -1000,
+            ModalResponse::Aborted => -1001,
+            ModalResponse::Continue => -1002
         }
     }
 }
